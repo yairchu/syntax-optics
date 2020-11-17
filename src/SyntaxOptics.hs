@@ -1,6 +1,6 @@
 module SyntaxOptics
     ( tokens
-    , infixOpLeftRecursion, tryMatch
+    , infixOpLeftRecursion, tryMatch, eof
     , asideFirst, firstOnly, secondOnly
     ) where
 
@@ -61,3 +61,6 @@ tokens =
             [] -> [[x]]
             ((y:ys) : zs) | not (isParen y) && isOp x == isOp y -> (x:y:ys) : zs
             ys -> [x] : ys
+
+eof :: (Monoid e, Eq e) => Prism' (a, e) a
+eof = secondOnly mempty

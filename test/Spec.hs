@@ -12,9 +12,9 @@ makePrisms ''Expr
 
 expr :: Prism' String Expr
 expr =
-    tokens .      -- convert string to tokens
-    takeExpr .    -- take the expression
-    secondOnly [] -- and there should be no remaining tokens
+    tokens .   -- convert string to tokens
+    takeExpr . -- take the expression
+    eof        -- and there should be no remaining tokens
 
 takeExpr :: Prism' [String] (Expr, [String])
 takeExpr =
