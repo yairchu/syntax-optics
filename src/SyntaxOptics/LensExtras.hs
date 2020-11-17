@@ -40,9 +40,8 @@ tryMatch ::
     APrism' src cons ->   -- Parse the constructor contents
     APrism' src whole ->  -- Prism to encode the other options
     Optic' p f src whole
-tryMatch c parse fallback =
-    prism' build
-    (\x -> (x ^? clonePrism parse <&> (clonePrism c #)) <|> x ^? clonePrism fallback)
+tryMatch c p fallback =
+    prism' build parse
     where
-        build x = maybe (clonePrism fallback # x) (clonePrism parse #) (x ^? clonePrism c)
-
+        build x = maybe (clonePrism fallback # x) (clonePrism p #) (x ^? clonePrism c)
+        parse x = (x ^? clonePrism p <&> (clonePrism c #)) <|> x ^? clonePrism fallback

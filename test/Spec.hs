@@ -1,7 +1,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 import Control.Lens
+import Data.Proxy
 import SyntaxOptics
+import VerboseOptics
 
 data Expr
     = Lit Int
@@ -10,20 +12,28 @@ data Expr
     deriving (Show, Eq)
 makePrisms ''Expr
 
-expr :: Prism' String Expr
-expr =
-    tokens .   -- convert string to tokens
-    takeExpr . -- take the expression
-    eof        -- and there should be no remaining tokens
+expr :: VerbosePrism' String String Expr
+expr = tokens . takeExpr . endOfTokens
 
-takeExpr :: Prism' [String] (Expr, [String])
+takeExpr :: VerbosePrism' String [String] (Expr, [String])
 takeExpr =
-    infixOpLeftRecursion "+" _Add $ -- Additions of
-    infixOpLeftRecursion "*" _Mul $ -- multiplications of
-    tryMatch (asideFirst _Lit)      -- literals or
-        (_Cons . asideFirst _Show) $
-    _Cons . firstOnly "(" .         -- expressions in parentheses
-        takeExpr . aside (_Cons . firstOnly ")")
+    -- Additions of
+    infixOpLeftRecursion p "+" _Add $
+    -- multiplications of
+    infixOpLeftRecursion p "*" _Mul $
+    verbose (\x -> "Unexpected: " <> unwords (take 1 x)) $
+    -- literals or
+    tryMatch (asideFirst _Lit) (_Cons . asideFirst _Show) $
+    -- expressions in parentheses
+    expect "(" . takeExpr . aside (expect ")")
+    where
+        p :: Proxy String
+        p = Proxy
 
 main :: IO ()
-main = putStrLn ("1 + (2*3)" & expr %~ id)
+main =
+    do
+        putStrLn ("1 + (2*3)" & expr %~ id)
+        print ("1 + (2*3) 3" ^?? expr)
+        print ("1 + (2*3" ^?? expr)
+        print (") 1 + (2*3)" ^?? expr)

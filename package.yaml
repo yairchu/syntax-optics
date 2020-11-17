@@ -12,11 +12,18 @@ dependencies:
 - base >= 4.9 && <5
 - constraints
 - lens
+- semigroupoids
+
+default-extensions:
+- DeriveFunctor
+- FlexibleContexts
+- FlexibleInstances
+- LambdaCase
+- MultiParamTypeClasses
+- TupleSections
 
 library:
   source-dirs: src
-  default-extensions:
-  - TupleSections
   ghc-options:
   - -fexpose-all-unfoldings
   - -Wall
