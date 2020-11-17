@@ -1,0 +1,40 @@
+name: syntax-optics
+version: 0.1.0.1
+license: BSD3
+author: "Yair Chuchem"
+maintainer: "yairchu@gmail.com"
+copyright: 2020 Yair Chuchem"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+dependencies:
+- base >= 4.9 && <5
+- constraints
+- lens
+
+library:
+  source-dirs: src
+  default-extensions:
+  - NoImplicitPrelude
+  ghc-options:
+  - -fexpose-all-unfoldings
+  - -Wall
+  - -Wnoncanonical-monad-instances
+  - -Wcompat
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wredundant-constraints
+
+tests:
+  syntax-optiocs-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -Wall
+    - -Wcompat
+    - -Wredundant-constraints
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
