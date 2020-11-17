@@ -1,43 +1,17 @@
 module SyntaxOptics
     ( tokens
-    , tryMatch
-    , infixOpLeftRecursion
+    , infixOpLeftRecursion, tryMatch
     , asideFirst, firstOnly, secondOnly
     ) where
 
-import Control.Applicative (Alternative(..))
 import Control.Lens
 import Data.Char as Char
-
-firstOnly ::
-    (Choice p, Applicative f, Eq e) =>
-    e -> Optic' p f (e, a) a
-firstOnly x = asideFirst (only x) . iso snd (() ,)
-
-secondOnly ::
-    (Choice p, Applicative f, Eq e) =>
-    e -> Optic' p f (a, e) a
-secondOnly x = swapped . firstOnly x
-
-asideFirst ::
-    (Choice p, Applicative f) =>
-    APrism s t a b -> Optic p f (s, e) (t, e) (a, e) (b, e)
-asideFirst l = swapped . aside l . swapped
-
--- Tuple shuffling Iso
-retuple ::
-    Iso
-    (a0, (a1, a2)) (b0, (b1, b2))
-    ((a0, a1), a2) ((b0, b1), b2)
-retuple =
-    iso
-    (\(w0, (w1, r)) -> ((w0, w1), r))
-    (\((w0, w1), r) -> (w0, (w1, r)))
+import SyntaxOptics.LensExtras
 
 -- Extend a base parsing prism with applications of an operator
 infixOpLeftRecursion ::
     (Choice p, Applicative f, Eq a) =>
-    a ->                        -- The operator's text
+    a ->                         -- The operator's text
     APrism' expr (expr, expr) -> -- The operator constructor's prism
     APrism' [a] (expr, [a]) ->   -- The base parsing prism
     Optic' p f [a] (expr, [a])
@@ -62,19 +36,6 @@ leftRecursion c extend base =
             (build . (clonePrism extend #) . (, state)) (x ^? clonePrism c)
         parseExtends x =
             x ^? clonePrism extend <&> _1 %~ (clonePrism c #) & maybe x parseExtends
-
--- Add an encoding for a sum-type constructor to an existing prism
-tryMatch ::
-    (Choice p, Applicative f) =>
-    APrism' whole cons -> -- The sum-type constructor prism
-    APrism' src cons ->   -- Parse the constructor contents
-    APrism' src whole ->  -- Prism to encode the other options
-    Optic' p f src whole
-tryMatch c parse fallback =
-    prism' build
-    (\x -> (x ^? clonePrism parse <&> (clonePrism c #)) <|> x ^? clonePrism fallback)
-    where
-        build x = maybe (clonePrism fallback # x) (clonePrism parse #) (x ^? clonePrism c)
 
 -- Transform a string into tokens
 tokens :: Iso' String [String]
