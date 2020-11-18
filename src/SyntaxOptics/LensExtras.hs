@@ -5,8 +5,8 @@ module SyntaxOptics.LensExtras
     , tryMatch
     ) where
 
-import Control.Applicative (Alternative(..))
 import Control.Lens
+import Data.Tagged (Tagged)
 
 firstOnly ::
     (Choice p, Applicative f, Eq e) =>
@@ -33,15 +33,36 @@ retuple =
     (\(w0, (w1, r)) -> ((w0, w1), r))
     (\((w0, w1), r) -> (w0, (w1, r)))
 
+-- | Coerce a polymorphic 'Prism' to a 'Review'.
+--
+-- @
+-- 'reviewing' :: 'Iso' s t a b -> 'Review' t b
+-- 'reviewing' :: 'Prism' s t a b -> 'Review' t b
+-- @
+--
+-- From https://github.com/ekmett/lens/pull/906
+reviewing :: (Bifunctor p, Functor f) => Optic Tagged Identity s t a b -> Optic' p f t b
+reviewing p =
+    bimap f (fmap f)
+    where
+        f = _Unwrapped . _Unwrapped %~ p
+
 -- Add an encoding for a sum-type constructor to an existing prism
 tryMatch ::
     (Choice p, Applicative f) =>
-    APrism' whole cons -> -- The sum-type constructor prism
-    APrism' src cons ->   -- Parse the constructor contents
-    APrism' src whole ->  -- Prism to encode the other options
-    Optic' p f src whole
+    APrism b a c1 c0 -> -- The sum-type constructor prism
+    APrism s t c0 c1 -> -- Parse the constructor contents
+    APrism s t a b ->   -- Prism to encode the other options
+    Optic p f s t a b
 tryMatch c p fallback =
-    prism' build parse
+    prism build parse
     where
-        build x = maybe (clonePrism fallback # x) (clonePrism p #) (x ^? clonePrism c)
-        parse x = (x ^? clonePrism p <&> (clonePrism c #)) <|> x ^? clonePrism fallback
+        build x =
+            maybe
+            (reviewing (clonePrism fallback) # x)
+            (reviewing (clonePrism p) #)
+            (x ^? getting (clonePrism c))
+        parse x =
+            case x ^? getting (clonePrism p) of
+            Just y -> Right (reviewing (clonePrism c) # y)
+            Nothing -> matching (clonePrism fallback) x

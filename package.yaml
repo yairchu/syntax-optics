@@ -13,6 +13,7 @@ dependencies:
 - constraints
 - lens
 - semigroupoids
+- tagged
 
 default-extensions:
 - DeriveFunctor
