@@ -6,42 +6,32 @@ module SyntaxOptics
     ) where
 
 import Control.Lens
+import Control.Monad ((>=>))
 import Data.Char as Char
 import SyntaxOptics.LensExtras
 import VerboseOptics
-import Data.Proxy
+import Data.Proxy (Proxy(..))
 
 -- Extend a base parsing prism with applications of an operator
 infixOpLeftRecursion ::
-    (Choice p, VerboseApplicative e f, Eq a, Show a) =>
+    (Choice p, VerboseApplicative e f, Eq a) =>
     Proxy e ->
     a ->                               -- The operator's text
     APrism' expr (expr, expr) ->       -- The operator constructor's prism
     VerbosePrism' e [a] (expr, [a]) -> -- The base parsing prism
     Optic' p f [a] (expr, [a])
-infixOpLeftRecursion p operatorText c sub =
-    leftRecursion p c
-    (aside (expect operatorText . sub) . retuple)
-    sub
-
--- Extend a base parsing prism with extensions to its right side
-leftRecursion ::
-    Proxy e ->
-    APrism' whole cons ->
-    APrism' (whole, state) (cons, state) ->
-    VerbosePrism' e state (whole, state) ->
-    VerbosePrism' e state (whole, state)
-leftRecursion _ c extend base =
-    verbosePrism build (fmap parseExtends . matchingVerbose base)
+infixOpLeftRecursion _ operatorText c sub =
+    verbosePrism build (matchingVerbose sub >=> parseExtends)
     where
         build (x, state) =
             maybe
-            (base # (x, state))
-            (build . (clonePrism extend #) . (, state))
+            (sub # (x, state))
+            (\(left, right) -> build (left, [operatorText]) <> build (right, state))
             (x ^? clonePrism c)
-        parseExtends x =
-            x ^? clonePrism extend
-            <&> _1 %~ (clonePrism c #) & maybe x parseExtends
+        parseExtends (base, s0) =
+            case s0 ^? _Cons . asideFirst (only operatorText) of
+            Nothing -> Right (base, s0)
+            Just ((), s1) -> matchingVerbose sub s1 & _Right . _1 %~ (clonePrism c #) . (base, )
 
 -- Transform a string into tokens
 tokens :: Iso' String [String]
