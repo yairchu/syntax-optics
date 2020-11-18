@@ -27,8 +27,8 @@ takeExpr =
 main :: IO ()
 main =
     do
-        putStrLn ("1 + ((2 + 3)*4)" & expr %~ id)
-        printNice ("1 + (2*3)" ^?? expr)
+        putStrLn ("1 + ((2 + 3 + 9)*4) + 5" & expr %~ id)
+        printNice ("1 + ((2 + 3 + 9)*4) + 5" ^?? expr)
         printNice ("(1 + (2*3)" ^?? expr)
         printNice ("1 + (2*3" ^?? expr)
         printNice ("1 + (2*3) 3" ^?? expr)

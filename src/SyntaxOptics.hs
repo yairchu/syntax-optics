@@ -31,7 +31,9 @@ infixOpLeftRecursion _ operatorText c sub =
         parseExtends (base, s0) =
             case s0 ^? _Cons . asideFirst (only operatorText) of
             Nothing -> Right (base, s0)
-            Just ((), s1) -> matchingVerbose sub s1 & _Right . _1 %~ (clonePrism c #) . (base, )
+            Just ((), s1) ->
+                matchingVerbose sub s1 & _Right . _1 %~ (clonePrism c #) . (base, )
+                >>= parseExtends
 
 -- Transform a string into tokens
 tokens :: Iso' String [String]
