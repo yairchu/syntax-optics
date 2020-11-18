@@ -1,22 +1,12 @@
 module SyntaxOptics.LensExtras
-    ( firstOnly, secondOnly
+    ( reviewing
     , asideFirst
     , retuple
-    , tryMatch
+    , prismFallback
     ) where
 
 import Control.Lens
 import Data.Tagged (Tagged)
-
-firstOnly ::
-    (Choice p, Applicative f, Eq e) =>
-    e -> Optic' p f (e, a) a
-firstOnly x = asideFirst (only x) . iso snd (() ,)
-
-secondOnly ::
-    (Choice p, Applicative f, Eq e) =>
-    e -> Optic' p f (a, e) a
-secondOnly x = swapped . firstOnly x
 
 asideFirst ::
     (Choice p, Applicative f) =>
@@ -47,22 +37,11 @@ reviewing p =
     where
         f = _Unwrapped . _Unwrapped %~ p
 
--- Add an encoding for a sum-type constructor to an existing prism
-tryMatch ::
-    (Choice p, Applicative f) =>
-    APrism b a c1 c0 -> -- The sum-type constructor prism
-    APrism s t c0 c1 -> -- Parse the constructor contents
-    APrism s t a b ->   -- Prism to encode the other options
-    Optic p f s t a b
-tryMatch c p fallback =
-    prism build parse
+prismFallback ::
+    (Profunctor p, Functor f) =>
+    APrism s t a b ->
+    Optic p f s t (Either s a) (Either t b)
+prismFallback p =
+    iso parse (either id (reviewing (clonePrism p) #))
     where
-        build x =
-            maybe
-            (reviewing (clonePrism fallback) # x)
-            (reviewing (clonePrism p) #)
-            (x ^? getting (clonePrism c))
-        parse x =
-            case x ^? getting (clonePrism p) of
-            Just y -> Right (reviewing (clonePrism c) # y)
-            Nothing -> matching (clonePrism fallback) x
+        parse x = maybe (Left x) Right (x ^? getting (clonePrism p))

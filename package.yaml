@@ -21,7 +21,9 @@ default-extensions:
 - FlexibleInstances
 - LambdaCase
 - MultiParamTypeClasses
+- ScopedTypeVariables
 - TupleSections
+- TypeApplications
 
 library:
   source-dirs: src
