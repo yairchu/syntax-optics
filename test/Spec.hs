@@ -16,15 +16,14 @@ makePrisms ''Expr
 expr :: VerbosePrism' String String Expr
 expr = tokens . takeExpr . endOfTokens
 
-p :: Proxy String
-p = Proxy
-
 takeExpr :: VerbosePrism' String [String] (Expr, [String])
 takeExpr =
     infixOpLeftRecursion p "+" _Add $           -- Additions of
     infixOpLeftRecursion p "*" _Mul $           -- multiplications of
     tryMatchAtom p (prismFallback _Lit) _Show $ -- literals or
     parens takeExpr                             -- expressions in parens
+    where
+        p = Proxy @String
 
 data Lisp
     = LAtom String
@@ -44,7 +43,7 @@ lisp = tokens . takeLisp . endOfTokens
 
 takeLisp :: VerbosePrism' String [String] (Lisp, [String])
 takeLisp =
-    tryMatchAtom p atomOrList (filtered (all isAlphaNum)) $
+    tryMatchAtom (Proxy @String) atomOrList (filtered (all isAlphaNum)) $
     parens (many takeLisp)
 
 printNice :: Show a => Either String a -> IO ()
