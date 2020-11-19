@@ -27,7 +27,7 @@ takeExpr =
 
 `expr` defined above can be used to
 
-```
+```Haskell
 > -- Use "#" from "lens" to pretty-print an Expr into a String
 > expr # (Lit 1 `Mul` (Lit 2 `Add` Lit 3)) `Add` Lit 4
 "1 * (2 + 3) + 4"
