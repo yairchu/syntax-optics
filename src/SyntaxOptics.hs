@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+
 module SyntaxOptics
     ( tokens, endOfTokens
     , infixOpLeftRecursion
@@ -75,13 +76,6 @@ expect ::
     b -> p t (f t) -> p t (f t)
 expect x =
     takeItem ("Ended when expected " <> show x) .
-    firstOnly (const ("Expected " <> show x)) x
-
-expect' ::
-    (Cons t t b b, Choice p, VerboseApplicative String f, Eq b, Show b) =>
-    b -> p t (f t) -> p t (f t)
-expect' x =
-    takeItem ("Ended when expected " <> show x) .
     firstOnly (\y -> "Unexpected " <> show y) x
 
 verboseOnly ::
@@ -106,8 +100,9 @@ secondOnly ::
 secondOnly e x = swapped . firstOnly e x
 
 parens ::
-    VerbosePrism' String [String] (x, [String]) -> VerbosePrism' String [String] (x, [String])
-parens p = expect' "(" . p . verboseAside (Proxy @String) (expect ")")
+    VerbosePrism' String [String] (x, [String]) ->
+    VerbosePrism' String [String] (x, [String])
+parens p = expect "(" . p . verboseAside (Proxy @String) (expect ")")
 
 tupleInEither ::
     Iso
