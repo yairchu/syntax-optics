@@ -22,6 +22,10 @@ data ParseResult e r a
     deriving Functor
 makePrisms ''ParseResult
 
+parseResultToEither :: ParseResult e r a -> Either (e, a) r
+parseResultToEither (ParseSuccess r) = Right r
+parseResultToEither (ParseFail e a) = Left (e, a)
+
 infixl 8 ^??
 (^??) :: s -> LensLike' (ParseResult e a) s a -> Either e a
 whole ^?? f =
@@ -31,11 +35,7 @@ whole ^?? f =
 -- original value while allowing the type to change if it does
 -- not match.
 matchingVerbose :: LensLike (ParseResult e a) s t a b -> s -> Either (e, t) a
-matchingVerbose f =
-    \case
-    ParseSuccess b -> Right b
-    ParseFail e t -> Left (e, t)
-    . f ParseSuccess
+matchingVerbose f = parseResultToEither . f ParseSuccess
 
 class Apply f => VerboseApplicative e f where
     vpure :: e -> a -> f a
