@@ -3,6 +3,7 @@ module SyntaxOptics
     ( tokens, endOfTokens
     , infixOpLeftRecursion
     , parens, tryMatchAtom
+    , prismFallback
     ) where
 
 import Control.Lens
@@ -107,12 +108,21 @@ parens ::
     VerbosePrism' String [String] (x, [String]) -> VerbosePrism' String [String] (x, [String])
 parens p = expect' "(" . p . verboseAside (Proxy @String) (expect ")")
 
+tupleInEither ::
+    Iso
+    (Either a0 a1, x) (Either b0 b1, x)
+    (Either (a0, x) (a1, x)) (Either (b0, x) (b1, x))
+tupleInEither =
+    iso
+    (\(a, x) -> a & _Left %~ (, x) & _Right %~ (, x))
+    (either (_1 %~ Left) (_1 %~ Right))
+
 tryMatchAtom ::
     Cons t t r0 r1 =>
     Proxy e ->
-    APrism b a c1 c0 ->
+    AnIso b a (Either o1 c1) (Either o0 c0) ->
     APrism r0 r1 c0 c1 ->
-    VerbosePrism e t t (a, t) (b, t) ->
+    VerbosePrism e t t (o0, t) (o1, t) ->
     VerbosePrism e t t (a, t) (b, t)
 tryMatchAtom p con repr =
-    tryMatch p (prismFallback (asideFirst con)) (_Cons . asideFirst repr)
+    tryMatch p (bimapping con id . tupleInEither) (_Cons . asideFirst repr)
