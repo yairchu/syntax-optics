@@ -4,6 +4,7 @@ module SyntaxOptics
     , infixOpLeftRecursion
     , parens, tryMatchAtom
     , prismFallback
+    , many
     ) where
 
 import Control.Lens
@@ -126,3 +127,14 @@ tryMatchAtom ::
     VerbosePrism e t t (a, t) (b, t)
 tryMatchAtom p con repr =
     tryMatch p (bimapping con id . tupleInEither) (_Cons . asideFirst repr)
+
+many :: APrism' [a] (r, [a]) -> Iso' [a] ([r], [a])
+many single =
+    iso parse build
+    where
+        build ([], rest) = rest
+        build (x:xs, rest) = clonePrism single # (x, build (xs, rest))
+        parse src =
+            case src ^? clonePrism single of
+            Nothing -> ([], src)
+            Just (x, rest) -> parse rest & _1 %~ (x:)

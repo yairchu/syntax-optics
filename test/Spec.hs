@@ -25,6 +25,27 @@ takeExpr =
     tryMatchAtom p (prismFallback _Lit) _Show $ -- literals or
     parens takeExpr                             -- expressions in parens
 
+data Lisp
+    = LAtom String
+    | LList [Lisp]
+    deriving (Show, Eq)
+makePrisms ''Lisp
+
+atomOrList :: Iso' Lisp (Either [Lisp] String)
+atomOrList =
+    iso toEither (either LList LAtom)
+    where
+        toEither (LAtom x) = Right x
+        toEither (LList x) = Left x
+
+lisp :: VerbosePrism' String String Lisp
+lisp = tokens . takeLisp . endOfTokens
+
+takeLisp :: VerbosePrism' String [String] (Lisp, [String])
+takeLisp =
+    tryMatchAtom p atomOrList (filtered (`notElem` ["(", ")"])) $
+    parens (many takeLisp)
+
 printNice :: Show a => Either String a -> IO ()
 printNice = putStrLn . either id show
 
@@ -38,3 +59,6 @@ main =
         printNice ("1 + (2*3) 3 + (4 * 5)" ^?? expr)
         printNice (") 1 + (2*3)" ^?? expr)
         printNice ("a + (2*3)" ^?? expr)
+
+        printNice ("(1 2 (3 4) 5)" ^?? lisp)
+        printNice ("(1 2 (3 4)) 5)" ^?? lisp)
