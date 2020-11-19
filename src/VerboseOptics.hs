@@ -45,13 +45,22 @@ type VerboseTraversal e s t a b =
     VerboseApplicative e f =>
     LensLike f s t a b
 
--- TODO: Also create the AVerbosePrism type
 type VerbosePrism e s t a b =
     forall p f.
     (Choice p, VerboseApplicative e f) =>
     Optic p f s t a b
 
 type VerbosePrism' e s a = VerbosePrism e s s a a
+
+-- TODO: Also create the AVerbosePrism type
+--
+-- The challenge is to come up with a such a type so that:
+--
+-- * VerbosePrism is more general than AVerbosePrism, so `id` can turn it to one.
+-- * `withVerbosePrism` deconstructs an AVerbosePrism, allowing to implement cloneVerbosePrism
+--
+-- This would required some concrete `p` and `f` types,
+-- which have instances for `Choice` and `VerboseApplicative` respectively.
 
 -- Verbose optics support for (^.) and (^..)
 instance Monoid r => VerboseApplicative e (Const r) where
