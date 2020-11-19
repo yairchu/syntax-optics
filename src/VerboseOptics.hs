@@ -138,19 +138,22 @@ verboseAsideFirst p l = swapped . verboseAside p l . swapped
 -- Add an encoding for a sum-type constructor to an existing verbose prism
 tryMatch ::
     Proxy e ->
-    APrism b a c1 c0 -> -- The sum-type constructor prism
-    APrism s t c0 c1 -> -- Parse the constructor contents
-    VerbosePrism e s t a b ->   -- Prism to encode the other options
+    -- Match to a specific constructor or to other content
+    AnIso b a (Either o1 c1) (Either o0 c0) ->
+    -- Parse the constructor contents
+    APrism s t c0 c1 ->
+    -- Prism to encode the other options
+    VerbosePrism e s t o0 o1 ->
     VerbosePrism e s t a b
 tryMatch _ c p fallback =
     verbosePrism build match
     where
         build x =
-            maybe
-            (reviewing fallback # x)
+            either
+            (reviewing fallback #)
             (reviewing (clonePrism p) #)
-            (x ^? getting (clonePrism c))
+            (x ^. getting (cloneIso c))
         match x =
             case x ^? getting (clonePrism p) of
-            Just y -> Right (reviewing (clonePrism c) # y)
-            Nothing -> matchingVerbose fallback x
+            Just y -> Right (reviewing (cloneIso c) # Right y)
+            Nothing -> matchingVerbose fallback x <&> (reviewing (cloneIso c) #) . Left

@@ -61,7 +61,7 @@ tokens =
             ys -> [x] : ys
 
 endOfTokens :: VerbosePrism' String (a, [String]) a
-endOfTokens = secondOnly (\x -> "Unexpected at end: " <> show (unwords x)) mempty
+endOfTokens = secondOnly (\x -> "Unexpected at end: " <> show (tokens # x)) mempty
 
 takeItem ::
     Cons s t a b =>
@@ -114,4 +114,5 @@ tryMatchAtom ::
     APrism r0 r1 c0 c1 ->
     VerbosePrism e t t (a, t) (b, t) ->
     VerbosePrism e t t (a, t) (b, t)
-tryMatchAtom p con repr = tryMatch p (asideFirst con) (_Cons . asideFirst repr)
+tryMatchAtom p con repr =
+    tryMatch p (prismFallback (asideFirst con)) (_Cons . asideFirst repr)
