@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 import Control.Lens
+import Data.Char
 import Data.Proxy
 import SyntaxOptics
 import VerboseOptics
@@ -43,7 +44,7 @@ lisp = tokens . takeLisp . endOfTokens
 
 takeLisp :: VerbosePrism' String [String] (Lisp, [String])
 takeLisp =
-    tryMatchAtom p atomOrList (filtered (`notElem` ["(", ")"])) $
+    tryMatchAtom p atomOrList (filtered (all isAlphaNum)) $
     parens (many takeLisp)
 
 printNice :: Show a => Either String a -> IO ()
@@ -62,3 +63,4 @@ main =
 
         printNice ("(1 2 (3 4) 5)" ^?? lisp)
         printNice ("(1 2 (3 4)) 5)" ^?? lisp)
+        printNice ("(1 // (3 4) 5)" ^?? lisp)
