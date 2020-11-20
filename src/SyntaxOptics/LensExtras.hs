@@ -30,7 +30,10 @@ retuple =
 -- 'reviewing' :: 'Prism' s t a b -> 'Review' t b
 -- @
 --
--- From https://github.com/ekmett/lens/pull/906
+-- TODO:
+-- This was added to lens in 2020.11.20
+-- https://github.com/ekmett/lens/commit/d47a6e9213f218a3d8f47eca557af018b9fa9aea
+-- Remove from here once available from next release in hackage
 reviewing :: (Bifunctor p, Functor f) => Optic Tagged Identity s t a b -> Optic' p f t b
 reviewing p =
     bimap f (fmap f)
