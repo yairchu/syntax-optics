@@ -29,11 +29,14 @@ reviewing p =
     where
         f = _Unwrapped . _Unwrapped %~ p
 
+-- Available in various packages such as "either"
+maybeToRight :: b -> Maybe a -> Either b a
+maybeToRight x Nothing = Left x
+maybeToRight _ (Just x) = Right x
+
 prismFallback ::
     (Profunctor p, Functor f) =>
     APrism s t a b ->
     Optic p f s t (Either s a) (Either t b)
 prismFallback p =
-    iso parse (either id (reviewing (clonePrism p) #))
-    where
-        parse x = maybe (Left x) Right (x ^? getting (clonePrism p))
+    iso (maybeToRight <*> (^? getting (clonePrism p))) (either id (reviewing (clonePrism p) #))
