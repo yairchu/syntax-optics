@@ -1,7 +1,6 @@
 module SyntaxOptics.LensExtras
     ( reviewing
     , asideFirst
-    , retuple
     , prismFallback
     ) where
 
@@ -12,16 +11,6 @@ asideFirst ::
     (Choice p, Applicative f) =>
     APrism s t a b -> Optic p f (s, e) (t, e) (a, e) (b, e)
 asideFirst l = swapped . aside l . swapped
-
--- Tuple shuffling Iso
-retuple ::
-    Iso
-    (a0, (a1, a2)) (b0, (b1, b2))
-    ((a0, a1), a2) ((b0, b1), b2)
-retuple =
-    iso
-    (\(w0, (w1, r)) -> ((w0, w1), r))
-    (\((w0, w1), r) -> (w0, (w1, r)))
 
 -- | Coerce a polymorphic 'Prism' to a 'Review'.
 --
