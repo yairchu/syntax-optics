@@ -125,10 +125,10 @@ verboseWithout ::
     VerbosePrism e s1 t1 a1 b1 ->
     VerbosePrism e (Either s0 s1) (Either t0 t1) (Either a0 a1) (Either b0 b1)
 verboseWithout _ p0 p1 =
-    verbosePrism (either (Left . (reviewing p0 #)) (Right . (reviewing p1 #))) $
-    \case
-    Left x -> matchingVerbose p0 x & _Right %~ Left & _Left . _2 %~ Left
-    Right x -> matchingVerbose p1 x & _Right %~ Right & _Left . _2 %~ Right
+    verbosePrism (bimap (reviewing p0 #) (reviewing p1 #))
+    (either
+        (bimap (_2 %~ Left) Left . matchingVerbose p0)
+        (bimap (_2 %~ Right) Right . matchingVerbose p1))
 
 verboseAside ::
     Proxy e ->
@@ -136,7 +136,7 @@ verboseAside ::
     VerbosePrism e (x, s) (x, t) (x, a) (x, b)
 verboseAside _ p =
     verbosePrism (_2 %~ (reviewing p #)) $
-    \(x, s) -> matchingVerbose p s & _Right %~ (x, ) & _Left . _2 %~ (x, )
+    \(x, s) -> matchingVerbose p s & bimap (_2 %~ (x, )) (x, )
 
 verboseAsideFirst ::
     Proxy e ->

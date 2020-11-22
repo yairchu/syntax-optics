@@ -110,7 +110,7 @@ tupleInEither ::
     (Either (a0, x) (a1, x)) (Either (b0, x) (b1, x))
 tupleInEither =
     iso
-    (\(a, x) -> a & _Left %~ (, x) & _Right %~ (, x))
+    (\(a, x) -> bimap (, x) (, x) a)
     (either (_1 %~ Left) (_1 %~ Right))
 
 tryMatchAtom ::
