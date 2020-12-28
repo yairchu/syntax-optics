@@ -38,10 +38,9 @@ infixOpLeftRecursion _ operatorText c sub =
                 matchingVerbose sub s1 & _Right . _1 %~ (clonePrism c #) . (base, )
                 >>= parseExtends
 
--- Transform a string into tokens
-tokens :: Iso' String [String]
-tokens =
-    iso splitTokens (foldr addToken "")
+addTokens :: [String] -> String
+addTokens =
+    foldr addToken ""
     where
         addToken x "" = x
         addToken [x] y
@@ -49,19 +48,27 @@ tokens =
         addToken x (y:ys)
             | Char.generalCategory y == Char.ClosePunctuation = x <> (y:ys)
         addToken x y = x <> " " <> y
+
+splitTokens :: String -> [String]
+splitTokens "" = []
+splitTokens [x] = [[x]]
+splitTokens (x:s:xs) | Char.isSpace s = [x] : splitTokens xs
+splitTokens (x:xs)
+    | Char.isSpace x = splitTokens xs
+    | isParen x = [x] : splitTokens xs
+    | otherwise =
+        case splitTokens xs of
+        ((y:ys) : zs) | not (isParen y) && isOp x == isOp y -> (x:y:ys) : zs
+        ys -> [x] : ys
+    where
         isOp =
             (`elem` [Char.MathSymbol, Char.OtherPunctuation]) .
             Char.generalCategory
         isParen = (`elem` "()[]{}")
-        splitTokens "" = []
-        splitTokens (x:s:xs) | Char.isSpace s = [x] : splitTokens xs
-        splitTokens (s:xs) | Char.isSpace s = splitTokens xs
-        splitTokens (x:xs) | isParen x = [x] : splitTokens xs
-        splitTokens (x:xs) =
-            case splitTokens xs of
-            [] -> [[x]]
-            ((y:ys) : zs) | not (isParen y) && isOp x == isOp y -> (x:y:ys) : zs
-            ys -> [x] : ys
+
+-- Transform a string into tokens
+tokens :: Iso' String [String]
+tokens = iso splitTokens addTokens
 
 endOfTokens :: VerbosePrism' String (a, [String]) a
 endOfTokens = secondOnly (\x -> "Unexpected at end: " <> show (tokens # x)) mempty
