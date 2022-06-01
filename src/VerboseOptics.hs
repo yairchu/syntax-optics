@@ -14,7 +14,6 @@ module VerboseOptics
 import Control.Lens hiding ((<.>))
 import Data.Functor.Apply (Apply((<.>)))
 import Data.Proxy (Proxy(..))
-import SyntaxOptics.LensExtras (reviewing)
 
 data ParseResult e r a
     = ParseSuccess r
